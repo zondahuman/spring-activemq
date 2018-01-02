@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:p="http://www.springframework.org/schema/p"
+	   xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	   xmlns:jee="http://www.springframework.org/schema/jee"
+	   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee.xsd">
+
+
+	<!-- 配置消息发送目的地方式 -->
+	<!-- Queue队列：仅有一个订阅者会收到消息，消息一旦被处理就不会存在队列中 -->
+    <bean id="queueDestination" class="org.apache.activemq.command.ActiveMQQueue">
+        <constructor-arg value="${order.queue.subject}"></constructor-arg>
+    </bean>
+
+
+	<!-- Spring JMS Template -->
+	<bean id="jmsTemplateQueue" class="org.springframework.jms.core.JmsTemplate">
+		<property name="connectionFactory" ref="jmsConnectionFactory" />
+		<!-- <property name="defaultDestination" value="subject" /> -->
+		<!-- 区别它采用的模式为false是p2p为true是订阅 -->
+		<property name="pubSubDomain" value="false" />
+		<!-- 当设置pubSubNoLocal为true时，消费者不会接收来自同一个连接的消息。因为我们在上面的配置文件中定义了连接池的最大连接数为1，因此每次使用的连接都是同一个连接，所以就消费者就接收不到消息。只有当pubSubNoLocal为false时，消费者才能接收到来自同一个连接的消息。 -->
+		<property name="pubSubNoLocal" value="false" />
+		<!--<property name="messageConverter" ref="feedMessageConverter" />-->
+		<property name="sessionTransacted" value="true" />
+		<!-- 使 deliveryMode, priority, timeToLive设置生效 -->
+		<property name="explicitQosEnabled" value="true" />
+		<property name="deliveryMode" value="2" />
+		<property name="priority" value="4" />
+		<property name="timeToLive" value="0" />
+	</bean>
+
+
+	<!--<jee:jndi-lookup jndi-name="jdbc/activemq" id="dataSource"/>-->
+	<!--<bean id="jtaTransactionManager" class="org.springframework.transaction.jta.JtaTransactionManager">-->
+		<!--<property name="transactionManager" ref="transactionManager" />-->
+			<!--</bean>-->
+	<!--<tx:jta-transaction-manager transaction-manager="jtaTransactionManager"/>-->
+	<bean id="jtaTransactionManager" class="org.springframework.transaction.jta.JtaTransactionManager"/>
+	<tx:annotation-driven transaction-manager="jtaTransactionManager"/>
+
+	<import resource="spring-producer-basic.xml"/>
+
+</beans>  
