@@ -27,8 +27,6 @@ public class MessageTaskUtil {
     Destination cmsDestination;
     @Resource
     FeedMessageConverter feedMessageConverter;
-    @Resource
-    Destination housedelSerialStatusDestination;
 
     @Resource
     SchedulingTaskExecutor asyncTaskExecutor;
@@ -52,6 +50,7 @@ public class MessageTaskUtil {
         // 使用MessageConverter的情况
 //        jmsTemplateQueue.setMessageConverter(this.feedMessageConverter);
         // 使用MessageConverter的情况
+        jmsTemplateQueue.setDeliveryDelay(1_800_000);
         jmsTemplateQueue.convertAndSend(queueDestination, message);
     }
 
@@ -59,9 +58,6 @@ public class MessageTaskUtil {
         jmsTemplateQueue.convertAndSend(cmsDestination, message);
     }
 
-    private void sendQueueSerialStatusMessage(String message) {
-        jmsTemplateQueue.convertAndSend(housedelSerialStatusDestination, message);
-    }
 
     /**
      * 发送消息队列到CMS系统
@@ -122,25 +118,6 @@ public class MessageTaskUtil {
 
     }
 
-    public void sendHousedelSerialStatus(Class c, String name, final String msg) {
-        final String key = StringUtils.join(c.getSimpleName(), ":", name);
-        final long t1 = System.currentTimeMillis();
-
-        try {
-            logger.info("serial begin:" + key);
-            asyncTaskExecutor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    sendQueueSerialStatusMessage(msg);
-                    logger.info("serial ok:" + key + ",cost:" + (System.currentTimeMillis() - t1));
-                }
-            });
-
-        } catch (Exception e) {
-            logger.error("serial err:" + key, e);
-        }
-
-    }
 
     public void sendPhoneMessage(Class c, String name, final String phone, final String msg) {
         final String key = StringUtils.join(c.getSimpleName(), ":", name, ",", phone);
